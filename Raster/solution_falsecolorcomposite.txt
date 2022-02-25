@@ -1,0 +1,15 @@
+# Read the grid values into numpy arrays
+nir = raster.read(4)
+red = raster.read(3)
+green = raster.read(2)
+
+# Normalize the values using the function that we defined earlier
+nirn = normalize(nir)
+redn = normalize(red)
+greenn = normalize(green)
+
+# Create the composite by stacking
+nrg = np.dstack((nirn, redn, greenn))
+
+# Let's see how our color composite looks like
+plt.imshow(nrg)
