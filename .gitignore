@@ -1,4 +1,5 @@
 .nbgrader.log
 .ipynb_checkpoints
+*.pyc
 */cache/**
 */data/**

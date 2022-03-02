@@ -53,7 +53,8 @@ def create_multiband_tif(bandpaths):
 
 #mytif,crs= create_multiband_tif(bandpaths)
 #print(mytif)
-mytif= "./data/S2B_RGBNIR_20210926.tif"
+#mytif= "./data/S2B_RGBNIR_20210926.tif"
+mytif = "./data/Clc2018_FI20m.tif"
 #crs = "EPSG:32635"
 #¤with rasterio.open(mytif) as data:
 #    rastercrs = data.crs.to_string()
@@ -61,8 +62,8 @@ mytif= "./data/S2B_RGBNIR_20210926.tif"
 def read_shapefile():
 
     # creates 33 MB clipped tif
-    with fiona.open("../L2/data/finland_municipalities.shp", "r") as shapefile:
-        polygons = [feature["geometry"] for feature in shapefile if feature['properties']['name'] == 'Helsinki']
+    with fiona.open("./data/seurasaari.shp", "r") as shapefile:
+        polygons = [feature["geometry"] for feature in shapefile] #if feature['properties']['name'] == 'Helsinki']
         print(polygons)
         #polycrs = str(shapefile.crs['init']).upper()
     # following had 88 MB
@@ -96,7 +97,8 @@ def clip_area(mytif, polygons):
                     "width": out_image.shape[2],
                     "transform": out_transform})
 
-    with rasterio.open("./data/S2B_RGBNIR_20210926_Helsinki.tif", "w", **out_meta) as dest:
+    with rasterio.open("./data/Clc2018_Seurasaari.tif", "w", **out_meta) as dest:
+    #with rasterio.open("./data/S2B_RGBNIR_20210926_Helsinki.tif", "w", **out_meta) as dest:
         dest.write(out_image)
 
 clip_area(mytif, polygon)
