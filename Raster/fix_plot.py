@@ -13,3 +13,10 @@ def stretch(array):
     res_img = np.maximum(np.minimum(res_img*255, 255), 0).astype(np.uint8)
 
     return res_img
+
+# Function to normalize the grid values
+def normalize(array):
+    """Normalizes numpy arrays into scale 0.0 - 1.0"""
+    array_min, array_max = array.min(), array.max()
+
+    return ((array - array_min)/(array_max - array_min))
