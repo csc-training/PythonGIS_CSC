@@ -1,6 +1,10 @@
+"""
 
+Functions for use in Seurasaari trees notebook 
 
-#download_from_url
+"""
+#################################
+#download_from_url (adjusted from AutoGIS course material)
 
 import os
 import urllib
@@ -13,6 +17,10 @@ def get_filename(url):
         return url.rsplit('/', 1)[1]
 
 def download_data(url):
+    """
+    Downloads data from given url
+    """
+    
     # Filepaths
     outdir = r"data"
 
@@ -29,43 +37,39 @@ def download_data(url):
         r = urllib.request.urlretrieve(url, outfp)
 
 
-#########################
+#################################
 
-# fix_plot
+# histogram stretch
 
 import numpy as np
 
 def stretch(array):
+    """
+    remove lowest and highest 2 percentile and perform histogram stretch on array
+    """
     
-    min_percent = 2   # Low percentile
-    max_percent = 98  # High percentile
-    lo, hi = np.nanpercentile(array, (min_percent, max_percent))
+    min_percent = 2   
+    max_percent = 98  
+    lowp, highp = np.nanpercentile(array, (min_percent, max_percent))
 
-    # Apply linear "stretch" - lo goes to 0, and hi goes to 1
-    res_img = (array.astype(float) - lo) / (hi-lo)
+    # Apply linear "stretch" from lowp to highp 
+    outar = (array.astype(float) - lowp) / (highp-lowp)
 
-    #clamp range to [0, 1] 
-    res_img = np.maximum(np.minimum(res_img*1, 1), 0)
+    #fix range to (0 to 1) 
+    outar = np.maximum(np.minimum(outar*1, 1), 0)
 
-    return res_img
+    return outar
 
-# Function to normalize the grid values
-def normalize(array):
-    """Normalizes numpy arrays into scale 0.0 - 1.0"""
-    array_min, array_max = array.min(), array.max()
+#################################
 
-    return ((array - array_min)/(array_max - array_min))
-
-
-#######
-
-# get_corine_legend
-
-
+# get corine legend from excel file
 
 import pandas as pd
 
 def read_excel():
+    """
+    read excel file into dataframe
+    """
 
     catxls =  'https://geoportal.ymparisto.fi/meta/julkinen/dokumentit/CorineMaanpeite2018Luokat.xls'
     catdf = pd.read_excel(catxls, index_col=None)
@@ -74,18 +78,25 @@ def read_excel():
 
 
 def get_limited_df():
+    """
+    limit dataframe from excel to only contain class value and its english name (level4)
+    """
 
     catdf = read_excel()
     catdf_lim = catdf[['Value','Level4Eng']].set_index('Value')
     return catdf_lim 
 
 def get_corine_dict():
+    """
+    transform limited dataframe from excel to dictionary
+    """
+    
     catdf_lim = get_limited_df()
     catdict = catdf_lim.to_dict()['Level4Eng']
 
     return catdict
 
-##########################
+#################################
 
 #get_json_feature
 
@@ -93,17 +104,20 @@ import json
 
 def getFeatures(gdf):
     """Function to parse features from GeoDataFrame in such a manner that rasterio wants them"""
+    
     return [json.loads(gdf.to_json())['features'][0]['geometry']]
 
 
-########################
+#################################
 
-#make_falso_color_image
-
+#for false color image
 
 import rasterio
 
 def read_band(s2, bandnumber):
+    """
+    reads band, rescales and removes artifacts from array
+    """
     
     band = s2.read(bandnumber)
     # rescale
@@ -113,10 +127,12 @@ def read_band(s2, bandnumber):
 
     return band
 
-
 import numpy as np
 
 def make_false_color_stack(raster):
+    """
+    read nir,red,green, stretch and create stack of arrays for false color composite
+    """
 
     nir = read_band(raster,4)
     red = read_band(raster,3)
@@ -131,59 +147,71 @@ def make_false_color_stack(raster):
 
     return rgb
 
-##############################
+#################################
 
 #zonal_stats_percentage
 
 def get_zonal_stats_percentage(zstats):
+    """
+    transforms the result of categorical zonal stats from number of pixels into rounded percentages of the whole polygon
+    """
 
     zstat_perc = {}
-    sum = 0
     total = zstats[0]['count']
     for key in zstats[0].keys():
         if not key == 'count':
             amount = zstats[0][key]
             perc=  round(amount/total *100)
             zstat_perc[key] = perc
-            sum += perc
-    
+
     return zstat_perc
 
 
-#######################
+#################################
 
 def get_forest_codes():
-
-    # Lets consider only vegetation
-    vegetation = ['Broad-leaved forest on mineral soil',
+    """
+    gets codes for all forest classes from corine dataframe
+    """
+    
+    # Lets consider only forest (that is present on Seurasaari)
+    forest = ['Broad-leaved forest on mineral soil',
     'Coniferous forest on mineral soil',
     'Coniferous forest on rocky soil',
     'Mixed forest on mineral soil',
     'Mixed forest on rocky soil']
 
     catdf_lim = get_limited_df()
+    forestdf = catdf_lim[catdf_lim['Level4Eng'].isin(forest)]
+    forestcodelist = forestdf.index.to_list()
 
-    vegdf = catdf_lim[catdf_lim['Level4Eng'].isin(vegetation)]
+    return forestcodelist
 
-    veglist = vegdf.index.to_list()
+#################################
 
-    return veglist
-
-###########################
+# forestmask
 
 def create_forest_mask(corinearray,forestcodes):
+    """
+    create mask from corine with 1 for forest, 0 other
+    """
     mask = (corinearray == int(forestcodes[0])) |  (corinearray == int(forestcodes[1])) | (corinearray == int(forestcodes[2])) | (corinearray == int(forestcodes[3])) | (corinearray == int(forestcodes[4]))
     
-    # currently mask is boolean, but we rather want it binary:
-
     mask = mask.astype('uint8')
     
     return mask
 
-###########################
+#################################
+
+#reproject shapefile
+
 import geopandas as gpd
 
 def get_reprojected_shapefilename(rastercrs, shapefilename):
+    """
+    reproject shapefile to given rastercrs, store it and return its name
+    """
+    
     df = gpd.read_file(shapefilename)
     df = df.to_crs(rastercrs)
     outname = os.path.join('data',os.path.splitext(os.path.basename(shapefilename))[0] + '_repr_32635.shp')
