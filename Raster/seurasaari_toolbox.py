@@ -44,7 +44,7 @@ def stretch(array):
     # Apply linear "stretch" - lo goes to 0, and hi goes to 1
     res_img = (array.astype(float) - lo) / (hi-lo)
 
-    #Multiply by 255, clamp range to [0, 255] and convert to uint8
+    #clamp range to [0, 1] 
     res_img = np.maximum(np.minimum(res_img*1, 1), 0)
 
     return res_img
@@ -83,7 +83,7 @@ def get_corine_dict():
     catdf_lim = get_limited_df()
     catdict = catdf_lim.to_dict()['Level4Eng']
 
-    return catdict , catdf_lim
+    return catdict
 
 ##########################
 
@@ -173,3 +173,19 @@ def get_forest_codes():
 
 def create_forest_mask(corinearray,forestcodes):
     mask = (corinearray == int(forestcodes[0])) |  (corinearray == int(forestcodes[1])) | (corinearray == int(forestcodes[2])) | (corinearray == int(forestcodes[3])) | (corinearray == int(forestcodes[4]))
+    
+    # currently mask is boolean, but we rather want it binary:
+
+    mask = mask.astype('uint8')
+    
+    return mask
+
+###########################
+import geopandas as gpd
+
+def get_reprojected_shapefilename(rastercrs, shapefilename):
+    df = gpd.read_file(shapefilename)
+    df = df.to_crs(rastercrs)
+    outname = os.path.join('data',os.path.splitext(os.path.basename(shapefilename))[0] + '_repr_32635.shp')
+    df.to_file(driver = 'ESRI Shapefile', filename= outname)
+    return outname
