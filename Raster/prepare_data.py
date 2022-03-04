@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Script for the preparation of raster lesson Sentinel 2 data
+"""
+
+
 import os
 import rasterio
 from rasterio.mask import mask
@@ -9,18 +14,15 @@ import numpy as np
 import glob
 
 
-def download_with_url(url, outdir):
-    S2SAFEfile = 0
-
-    return S2SAFEfile
-
-
 def find_bands(S2SAFEfile, pixelsize):
+    """
+    find bands from Sentinel-2 SAFE "file" with given pixelsize
+    """
     
     bandlocation =  [S2SAFEfile,'*','*','IMG_DATA']
     
-
     bandpaths = {}
+    # we want r,g,b and nir at 10 m spatial resolution
     for band in [2,3,4,8]:
         pathbuildinglist =  bandlocation + ['R' + str(pixelsize) + 'm','*' + str(band)+ '_' + str(pixelsize) +'m.jp2'] 
         bandpathpattern = os.path.join(*pathbuildinglist)
@@ -31,11 +33,11 @@ def find_bands(S2SAFEfile, pixelsize):
     #type: dict[bandnumber] - bandpath
     return bandpaths
 
-#bandpaths = find_bands("./data/S2B_MSIL2A_20210926T094029_N0301_R036_T35VLG_20210926T110446.SAFE",10)
-#print(bandpaths)
 
 def create_multiband_tif(bandpaths):
-
+    """
+    create multiband geotif file from given bandpathdict
+    """
 
     outfilename = "./data/S2B_RGBNIR_20210926.tif"
     with rasterio.open(bandpaths[4]) as src:
@@ -51,44 +53,23 @@ def create_multiband_tif(bandpaths):
 
     return outfilename, crs
 
-#mytif,crs= create_multiband_tif(bandpaths)
-#print(mytif)
-#mytif= "./data/S2B_RGBNIR_20210926.tif"
-mytif = "./data/Clc2018_FI20m.tif"
-#crs = "EPSG:32635"
-#¤with rasterio.open(mytif) as data:
-#    rastercrs = data.crs.to_string()
 
 def read_shapefile():
+    """
+    reads in shapefile of Finland municipalities and returns geometry of Helsinki polygon
+    """
 
-    # creates 33 MB clipped tif
-    with fiona.open("./data/seurasaari.shp", "r") as shapefile:
-        polygons = [feature["geometry"] for feature in shapefile] #if feature['properties']['name'] == 'Helsinki']
-        print(polygons)
+    with fiona.open("../L2/data/finland_municipalities.shp", "r") as shapefile:
+        polygons = [feature["geometry"] for feature in shapefile] if feature['properties']['name'] == 'Helsinki'])
         #polycrs = str(shapefile.crs['init']).upper()
-    # following had 88 MB
-    #with fiona.open("../L4/data/Helsinki_borders.shp", "r") as shapefile:
-    #    polygons = [feature["geometry"] for feature in shapefile]
-
     return polygons#, polycrs
 
-polygon = read_shapefile()
-"""
-# following does not work for whatever reason
-def fix_crs(polygon, polycrs, rastercrs):
-    print(polycrs)
-    print(rastercrs)
-    print(polygon)
 
-    transformedpoly = transform_geom(polycrs, rastercrs, polygon)
-    return transformedpoly
-
-polycrs='EPSG:3067'
-rastercrs='EPSG:32635'
-fixedpolygon = fix_crs(polygon, polycrs, rastercrs)
-"""
-
-def clip_area(mytif, polygons):
+def clip_area(mytif, polygons, outname):
+    """
+    clip area of polygons from input raster file
+    """
+    
     with rasterio.open(mytif) as src:
         out_image, out_transform = mask(src, polygons, crop=True)
         out_meta = src.meta
@@ -97,8 +78,12 @@ def clip_area(mytif, polygons):
                     "width": out_image.shape[2],
                     "transform": out_transform})
 
-    with rasterio.open("./data/Clc2018_Seurasaari.tif", "w", **out_meta) as dest:
-    #with rasterio.open("./data/S2B_RGBNIR_20210926_Helsinki.tif", "w", **out_meta) as dest:
+   
+    with rasterio.open(outname, "w", **out_meta) as dest:
         dest.write(out_image)
 
-clip_area(mytif, polygon)
+# Process for getting Sentinel2 4 band raster of Helsinki
+bandpaths = find_bands("./data/S2B_MSIL2A_20210926T094029_N0301_R036_T35VLG_20210926T110446.SAFE",10)
+mytif,crs= create_multiband_tif(bandpaths)
+polygon = read_shapefile()
+clip_area(mytif, polygon, "./data/S2B_RGBNIR_20210926_Helsinki.tif")
