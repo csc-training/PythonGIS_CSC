@@ -2,6 +2,7 @@
 
 """
 Script for the preparation of raster lesson Sentinel 2 data
+-- not part of the course, data prepared with this is provided: https://a3s.fi/gis-courses/pythongis_2022/S2B_RGBNIR_20210926_Helsinki.tif ---
 """
 
 
