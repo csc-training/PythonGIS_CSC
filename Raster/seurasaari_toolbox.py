@@ -1,6 +1,8 @@
 """
 
-Functions for use in Seurasaari trees notebook 
+Functions for use in Seurasaari trees notebook (Raster lesson of Introduction to Python GIS at CSC 2022)
+
+last updated: 10.03.2022
 
 """
 #################################
@@ -66,32 +68,20 @@ def stretch(array):
 
 import pandas as pd
 
-def read_excel():
-    """
-    read excel file into dataframe
-    """
-
-    catxls =  'https://geoportal.ymparisto.fi/meta/julkinen/dokumentit/CorineMaanpeite2018Luokat.xls'
+def excel_to_df(catxls):
+    # read excel file into dataframe
     catdf = pd.read_excel(catxls, index_col=None)
-
-    return catdf
-
-
-def get_limited_df():
-    """
-    limit dataframe from excel to only contain class value and its english name (level4)
-    """
-
-    catdf = read_excel()
+    # limit dataframe from excel to only contain class value and its english name (level4)
     catdf_lim = catdf[['Value','Level4Eng']].set_index('Value')
-    return catdf_lim 
+    return catdf_lim
 
-def get_corine_dict():
+
+def get_corine_dict(catxls):
     """
     transform limited dataframe from excel to dictionary
     """
-    
-    catdf_lim = get_limited_df()
+    catdf_lim = excel_to_df(catxls)
+    # transform to dictionary
     catdict = catdf_lim.to_dict()['Level4Eng']
 
     return catdict
@@ -119,6 +109,7 @@ def read_band(s2, bandnumber):
     reads band, rescales and removes artifacts from array
     """
     
+    # read band into array
     band = s2.read(bandnumber)
     # rescale
     band = band / 10000
@@ -157,9 +148,12 @@ def get_zonal_stats_percentage(zstats):
     """
 
     zstat_perc = {}
+    # total amount of pixels is stored as 'count'
     total = zstats[0]['count']
+    # loop through classes
     for key in zstats[0].keys():
         if not key == 'count':
+            # calcualate percentage of total and store in dictionary
             amount = zstats[0][key]
             perc=  round(amount/total *100)
             zstat_perc[key] = perc
@@ -181,8 +175,11 @@ def get_forest_codes():
     'Mixed forest on mineral soil',
     'Mixed forest on rocky soil']
 
-    catdf_lim = get_limited_df()
+    # we only need to look at value and english description
+    catdf_lim = excel_to_df('https://geoportal.ymparisto.fi/meta/julkinen/dokumentit/CorineMaanpeite2018Luokat.xls')
+    # and we only want those classes that include forest
     forestdf = catdf_lim[catdf_lim['Level4Eng'].isin(forest)]
+    # as list
     forestcodelist = forestdf.index.to_list()
 
     return forestcodelist
@@ -195,8 +192,10 @@ def create_forest_mask(corinearray,forestcodes):
     """
     create mask from corine with 1 for forest, 0 other
     """
+    # mask places where corine values are those of the forest classes
     mask = (corinearray == int(forestcodes[0])) |  (corinearray == int(forestcodes[1])) | (corinearray == int(forestcodes[2])) | (corinearray == int(forestcodes[3])) | (corinearray == int(forestcodes[4]))
     
+    # store as integers
     mask = mask.astype('uint8')
     
     return mask
@@ -212,8 +211,13 @@ def get_reprojected_shapefilename(rastercrs, shapefilename):
     reproject shapefile to given rastercrs, store it and return its name
     """
     
+    # read shapefile into dataframe
     df = gpd.read_file(shapefilename)
+    # reproject to rasters CRS
     df = df.to_crs(rastercrs)
+    # build the outputname from the inputname
     outname = os.path.join('data',os.path.splitext(os.path.basename(shapefilename))[0] + '_repr_32635.shp')
+    # write to disk
     df.to_file(driver = 'ESRI Shapefile', filename= outname)
+    # return the name of the reprojected shapefile
     return outname
