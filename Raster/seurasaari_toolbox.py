@@ -72,7 +72,7 @@ def excel_to_df(catxls):
     # read excel file into dataframe
     catdf = pd.read_excel(catxls, index_col=None)
     # limit dataframe from excel to only contain class value and its english name (level4)
-    catdf_lim = catdf[['Value','Level4Eng']].set_index('Value')
+    catdf_lim = catdf[["Value","Level4Eng"]].set_index("Value")
     return catdf_lim
 
 
@@ -82,7 +82,7 @@ def get_corine_dict(catxls):
     """
     catdf_lim = excel_to_df(catxls)
     # transform to dictionary
-    catdict = catdf_lim.to_dict()['Level4Eng']
+    catdict = catdf_lim.to_dict()["Level4Eng"]
 
     return catdict
 
@@ -95,7 +95,7 @@ import json
 def getFeatures(gdf):
     """Function to parse features from GeoDataFrame in such a manner that rasterio wants them"""
     
-    return [json.loads(gdf.to_json())['features'][0]['geometry']]
+    return [json.loads(gdf.to_json())["features"][0]["geometry"]]
 
 
 #################################
@@ -149,10 +149,10 @@ def get_zonal_stats_percentage(zstats):
 
     zstat_perc = {}
     # total amount of pixels is stored as 'count'
-    total = zstats[0]['count']
+    total = zstats[0]["count"]
     # loop through classes
     for key in zstats[0].keys():
-        if not key == 'count':
+        if not key == "count":
             # calcualate percentage of total and store in dictionary
             amount = zstats[0][key]
             perc=  round(amount/total *100)
@@ -169,16 +169,16 @@ def get_forest_codes():
     """
     
     # Lets consider only forest (that is present on Seurasaari)
-    forest = ['Broad-leaved forest on mineral soil',
-    'Coniferous forest on mineral soil',
-    'Coniferous forest on rocky soil',
-    'Mixed forest on mineral soil',
-    'Mixed forest on rocky soil']
+    forest = ["Broad-leaved forest on mineral soil",
+    "Coniferous forest on mineral soil",
+    "Coniferous forest on rocky soil",
+    "Mixed forest on mineral soil",
+    "Mixed forest on rocky soil"]
 
     # we only need to look at value and english description
-    catdf_lim = excel_to_df('https://geoportal.ymparisto.fi/meta/julkinen/dokumentit/CorineMaanpeite2018Luokat.xls')
+    catdf_lim = excel_to_df("https://geoportal.ymparisto.fi/meta/julkinen/dokumentit/CorineMaanpeite2018Luokat.xls")
     # and we only want those classes that include forest
-    forestdf = catdf_lim[catdf_lim['Level4Eng'].isin(forest)]
+    forestdf = catdf_lim[catdf_lim["Level4Eng"].isin(forest)]
     # as list
     forestcodelist = forestdf.index.to_list()
 
@@ -196,7 +196,7 @@ def create_forest_mask(corinearray,forestcodes):
     mask = (corinearray == int(forestcodes[0])) |  (corinearray == int(forestcodes[1])) | (corinearray == int(forestcodes[2])) | (corinearray == int(forestcodes[3])) | (corinearray == int(forestcodes[4]))
     
     # store as integers
-    mask = mask.astype('uint8')
+    mask = mask.astype("uint8")
     
     return mask
 
@@ -216,8 +216,8 @@ def get_reprojected_shapefilename(rastercrs, shapefilename):
     # reproject to rasters CRS
     df = df.to_crs(rastercrs)
     # build the outputname from the inputname
-    outname = os.path.join('data',os.path.splitext(os.path.basename(shapefilename))[0] + '_repr_32635.shp')
+    outname = os.path.join("data",os.path.splitext(os.path.basename(shapefilename))[0] + "_repr_32635.shp")
     # write to disk
-    df.to_file(driver = 'ESRI Shapefile', filename= outname)
+    df.to_file(driver = "ESRI Shapefile", filename= outname)
     # return the name of the reprojected shapefile
     return outname
