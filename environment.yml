@@ -1,4 +1,4 @@
-name: autogis-environment
+name: autogis
 
 channels:
   - conda-forge
@@ -11,6 +11,7 @@ dependencies:
   - pysal
   - mapclassify
   - osmnx
+  - nose
   - pyrosm
   - geopy
   - geojson
@@ -19,3 +20,6 @@ dependencies:
   - folium
   - mplleaflet
   - bokeh
+  - xlrd
+  - jupyterlab 
+  - jupyterlab-git 
