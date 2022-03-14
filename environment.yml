@@ -2,7 +2,6 @@ name: autogis
 
 channels:
   - conda-forge
-  - patrikhlobi
 
 dependencies:
   - python=3.8
@@ -20,7 +19,6 @@ dependencies:
   - contextily
   - folium
   - mplleaflet
-  - pandas-bokeh
   - bokeh
   - xlrd
   - jupyterlab 
