@@ -4,4 +4,4 @@ The material is same as it is taught at University of Helsinki, except for the R
 
 Thanks to @HTenkanen, @VuokkoH and @haavardaagesen for the great work!
 
-Course webpage: https://autogis-site.readthedocs.io/en/csc/
+
